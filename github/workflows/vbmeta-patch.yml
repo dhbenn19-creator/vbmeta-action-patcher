@@ -1,0 +1,36 @@
+name: Patch vbmeta.img
+
+on:
+  workflow_dispatch:  # تشغيل يدوي
+
+jobs:
+  patch-vbmeta:
+    runs-on: ubuntu-latest
+    steps:
+      - name: سحب الملفات من المستودع
+        uses: actions/checkout@v3
+
+      - name: تثبيت Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: تنزيل avbtool
+        run: |
+          wget https://android.googlesource.com/platform/external/avb/+/refs/heads/master/avbtool?format=TEXT -O avbtool.base64
+          base64 --decode avbtool.base64 > avbtool
+          chmod +x avbtool
+
+      - name: تعديل vbmeta.img
+        run: |
+          ./avbtool make_vbmeta_image \
+            --output vbmeta_patched.img \
+            --disable_verification \
+            --disable_verity \
+            --include_descriptors_from_image vbmeta.img
+
+      - name: رفع الملف المعدل
+        uses: actions/upload-artifact@v3
+        with:
+          name: vbmeta_patched
+          path: vbmeta_patched.img
